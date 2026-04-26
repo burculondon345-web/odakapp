@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Odak">
+<meta name="theme-color" content="#0f0f0f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Odak</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#222;--border:#2e2e2e;
+  --text:#f0ede6;--muted:#6b6b6b;--accent:#c8f564;--danger:#ff5f5f;--warn:#ffb347;
+  --radius:14px;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;padding-bottom:calc(80px + var(--safe-bottom))}
+h1,h2,h3,.brand{font-family:'Syne',sans-serif}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(15,15,15,0.96);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 0;border:none;background:none;cursor:pointer;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:10px;transition:color .2s}
+.nav-btn.active{color:var(--accent)}
+.nav-icon{font-size:19px;line-height:1}
+
+.page{display:none;padding:0 0 16px}
+.page.active{display:block}
+.page-header{padding:calc(14px + var(--safe-top)) 16px 12px;position:sticky;top:0;background:rgba(15,15,15,0.96);backdrop-filter:blur(12px);z-index:50;border-bottom:1px solid var(--border)}
+.brand{font-size:22px;font-weight:800;color:var(--accent);letter-spacing:-0.5px}
+.page-title{font-size:20px;font-weight:700;letter-spacing:-0.3px}
+.page-sub{font-size:12px;color:var(--muted);margin-top:3px}
+
+.inbox-list{padding:4px 0}
+.inbox-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.inbox-item-text{flex:1;font-size:15px;line-height:1.4}
+.inbox-item-text.done{text-decoration:line-through;color:var(--muted)}
+.item-menu-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.item-menu-btn:active{background:var(--surface2)}
+
+.fab{position:fixed;bottom:calc(88px + var(--safe-bottom));right:16px;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#0f0f0f;border:none;cursor:pointer;font-size:28px;font-weight:300;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(200,245,100,0.25);z-index:90;transition:transform .15s}
+.fab:active{transform:scale(0.93)}
+
+.cards-grid{padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.group-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:border-color .2s}
+.group-card:active{border-color:var(--accent)}
+.group-card-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.group-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.group-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.group-progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.group-progress-fill{height:100%;border-radius:2px;transition:width .3s}
+
+.detail-panel{display:none;position:fixed;inset:0;background:var(--bg);z-index:150;overflow-y:auto;padding-bottom:calc(80px + var(--safe-bottom))}
+.detail-header{padding:calc(14px + var(--safe-top)) 16px 12px;position:sticky;top:0;background:rgba(15,15,15,0.96);backdrop-filter:blur(12px);z-index:50;border-bottom:1px solid var(--border)}
+.back-btn{display:flex;align-items:center;gap:6px;border:none;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;padding:0;margin-bottom:8px}
+.task-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.task-rank{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0}
+.task-rank.first{border-color:var(--accent);color:var(--accent)}
+.task-text{flex:1;font-size:15px;line-height:1.4}
+.task-text.done{text-decoration:line-through;color:var(--muted)}
+.first-badge{font-size:10px;color:var(--accent);font-weight:700;letter-spacing:0.05em;margin-bottom:2px;text-transform:uppercase}
+.drag-handle{color:var(--muted);font-size:18px;cursor:grab;padding:0 4px;flex-shrink:0}
+
+.settings-section{padding:12px 16px}
+.settings-title{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;margin-top:4px}
+.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.settings-row{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);gap:12px}
+.settings-row:last-child{border-bottom:none}
+.settings-row-name{flex:1;font-size:15px}
+.icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}
+.icon-btn:active{background:var(--surface2)}
+.icon-btn.danger{color:var(--danger);border-color:rgba(255,95,95,0.3)}
+.add-row-btn{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;background:none;border:none;cursor:pointer;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:15px;margin-top:6px}
+.reset-btn{width:100%;padding:15px;background:none;border:1px solid rgba(255,95,95,0.3);border-radius:var(--radius);color:var(--danger);font-family:'DM Sans',sans-serif;font-size:15px;cursor:pointer}
+.reset-btn:active{background:rgba(255,95,95,0.08)}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:flex-end}
+.overlay.open{display:flex}
+.drawer{background:var(--surface);border-radius:20px 20px 0 0;padding:20px 16px calc(16px + var(--safe-bottom));width:100%;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.drawer-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.drawer-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:14px}
+.drawer-input{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;outline:none}
+.drawer-input:focus{border-color:var(--accent)}
+.drawer-actions{display:flex;gap:8px;margin-top:12px}
+.btn-primary{flex:1;padding:13px;background:var(--accent);color:#0f0f0f;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+.btn-primary:active{transform:scale(0.98)}
+.btn-secondary{padding:13px 18px;background:none;color:var(--muted);border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;cursor:pointer}
+.menu-option{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border);cursor:pointer;font-size:15px;width:100%;text-align:left;color:var(--text);font-family:'DM Sans',sans-serif}
+.menu-option:active{background:var(--surface2)}
+.menu-option.danger{color:var(--danger);border-color:rgba(255,95,95,0.3)}
+.group-selector{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto}
+.group-option{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--border);cursor:pointer;font-size:14px}
+.group-option.selected{border-color:var(--accent)}
+.color-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color .15s}
+.color-dot.selected{border-color:var(--text)}
+.counter-badge{background:var(--surface2);border-radius:99px;padding:2px 8px;font-size:12px;color:var(--muted)}
+.limit-warn{font-size:12px;color:var(--warn);margin-top:6px}
+.empty-state{text-align:center;padding:48px 24px;color:var(--muted);font-size:14px;line-height:1.7}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:0.5}
+.assign-tabs{display:flex;gap:8px;margin-bottom:10px}
+.assign-tab{flex:1;padding:9px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer}
+.assign-tab.active{background:var(--accent);color:#0f0f0f;border-color:var(--accent);font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- GENEL LİSTE -->
+<div id="page-inbox" class="page active">
+  <div class="page-header">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span class="brand">Odak</span>
+      <span class="counter-badge" id="inbox-count">0 görev</span>
+    </div>
+    <div class="page-sub">Genel yapılacaklar listesi</div>
+  </div>
+  <div class="inbox-list" id="inbox-list"></div>
+  <div id="inbox-empty" class="empty-state" style="display:none">
+    <div class="empty-icon">📋</div>
+    <div>Henüz görev yok.<br>Sağ alttaki + ile ekle.</div>
+  </div>
+</div>
+
+<!-- GRUPLAR -->
+<div id="page-groups" class="page">
+  <div class="page-header">
+    <div class="page-title">Gruplar</div>
+    <div class="page-sub">Meşguliyet durumuna göre — maks. 20 görev</div>
+  </div>
+  <div class="cards-grid" id="groups-grid"></div>
+</div>
+
+<!-- BÖLÜMLER -->
+<div id="page-sections" class="page">
+  <div class="page-header">
+    <div class="page-title">Bölümler</div>
+    <div class="page-sub">İşin niteliğine göre — maks. 20 görev</div>
+  </div>
+  <div class="cards-grid" id="sections-grid"></div>
+</div>
+
+<!-- AYARLAR -->
+<div id="page-settings" class="page">
+  <div class="page-header">
+    <div class="page-title">Ayarlar</div>
+  </div>
+  <div class="settings-section">
+    <div class="settings-title">Meşguliyet Grupları</div>
+    <div class="settings-card" id="settings-groups-list"></div>
+    <button class="add-row-btn" onclick="openAddEntity('group')">＋ Yeni grup ekle</button>
+  </div>
+  <div class="settings-section">
+    <div class="settings-title">İş Bölümleri</div>
+    <div class="settings-card" id="settings-sections-list"></div>
+    <button class="add-row-btn" onclick="openAddEntity('section')">＋ Yeni bölüm ekle</button>
+  </div>
+  <div class="settings-section">
+    <div class="settings-title">Tehlikeli Bölge</div>
+    <button class="reset-btn" onclick="resetAll()">⚠ Tüm verileri sıfırla</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('inbox',this)">
+    <span class="nav-icon">☰</span>Liste
+  </button>
+  <button class="nav-btn" onclick="showPage('groups',this)">
+    <span class="nav-icon">◎</span>Gruplar
+  </button>
+  <button class="nav-btn" onclick="showPage('sections',this)">
+    <span class="nav-icon">❖</span>Bölümler
+  </button>
+  <button class="nav-btn" onclick="showPage('settings',this)">
+    <span class="nav-icon">⚙</span>Ayarlar
+  </button>
+</nav>
+
+<button class="fab" id="main-fab" onclick="fabAction()">＋</button>
+
+<!-- GRUP DETAY -->
+<div class="detail-panel" id="group-detail">
+  <div class="detail-header">
+    <button class="back-btn" onclick="closeDetail('group')">← Geri</button>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="gd-dot" class="group-dot" style="width:12px;height:12px"></div>
+      <div class="page-title" id="gd-name"></div>
+      <span class="counter-badge" id="gd-count"></span>
+    </div>
+    <div class="page-sub" id="gd-info"></div>
+  </div>
+  <div id="gd-tasks"></div>
+  <div id="gd-empty" class="empty-state" style="display:none">
+    <div class="empty-icon">✦</div><div>Bu grupta görev yok.<br>+ ile ekle.</div>
+  </div>
+  <button class="fab" onclick="openAddTask()" style="position:fixed">＋</button>
+</div>
+
+<!-- BÖLÜM DETAY -->
+<div class="detail-panel" id="section-detail">
+  <div class="detail-header">
+    <button class="back-btn" onclick="closeDetail('section')">← Geri</button>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="sd-dot" class="group-dot" style="width:12px;height:12px"></div>
+      <div class="page-title" id="sd-name"></div>
+      <span class="counter-badge" id="sd-count"></span>
+    </div>
+    <div class="page-sub" id="sd-info"></div>
+  </div>
+  <div id="sd-tasks"></div>
+  <div id="sd-empty" class="empty-state" style="display:none">
+    <div class="empty-icon">✦</div><div>Bu bölümde görev yok.<br>+ ile ekle.</div>
+  </div>
+  <button class="fab" onclick="openAddTask()" style="position:fixed">＋</button>
+</div>
+
+<!-- OVERLAY: inbox ekle -->
+<div class="overlay" id="ov-inbox" onclick="closeOverlay('ov-inbox')">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title">Yeni görev ekle</div>
+    <textarea class="drawer-input" id="inbox-input" rows="3" placeholder="Ne yapacaksın?"></textarea>
+    <div class="drawer-actions">
+      <button class="btn-secondary" onclick="closeOverlay('ov-inbox')">İptal</button>
+      <button class="btn-primary" onclick="addInboxItem()">Ekle</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY: inbox item menu -->
+<div class="overlay" id="ov-item-menu" onclick="closeOverlay('ov-item-menu')">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title" id="im-title"></div>
+    <div id="im-options" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<!-- OVERLAY: ata -->
+<div class="overlay" id="ov-assign" onclick="closeOverlay('ov-assign')">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title" id="assign-title">Ata</div>
+    <div class="assign-tabs">
+      <button class="assign-tab active" id="atab-group" onclick="switchAssignTab('group')">Gruba</button>
+      <button class="assign-tab" id="atab-section" onclick="switchAssignTab('section')">Bölüme</button>
+    </div>
+    <div class="group-selector" id="assign-list"></div>
+    <div class="drawer-actions" style="margin-top:12px">
+      <button class="btn-secondary" onclick="closeOverlay('ov-assign')">İptal</button>
+      <button class="btn-primary" onclick="confirmAssign()">Ata</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY: görev ekle (detay içi) -->
+<div class="overlay" id="ov-task" onclick="closeOverlay('ov-task')">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title" id="task-title">Görev Ekle</div>
+    <textarea class="drawer-input" id="task-input" rows="3" placeholder="Görev açıkla..."></textarea>
+    <div id="task-limit-warn" class="limit-warn" style="display:none">⚠ Bu alan 20 görev limitine ulaştı.</div>
+    <div class="drawer-actions">
+      <button class="btn-secondary" onclick="closeOverlay('ov-task')">İptal</button>
+      <button class="btn-primary" id="task-add-btn" onclick="confirmAddTask()">Ekle</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY: görev menüsü (detay içi) -->
+<div class="overlay" id="ov-task-menu" onclick="closeOverlay('ov-task-menu')">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title" id="tm-title"></div>
+    <div id="tm-options" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<!-- OVERLAY: grup/bölüm ekle-düzenle -->
+<div class="overlay" id="ov-entity" onclick="closeOverlay('ov-entity')">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title" id="entity-title">Yeni</div>
+    <input class="drawer-input" id="entity-name" placeholder="Ad" style="margin-bottom:12px">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Renk</div>
+    <div class="color-picker" id="color-picker"></div>
+    <div class="drawer-actions" style="margin-top:16px">
+      <button class="btn-secondary" onclick="closeOverlay('ov-entity')">İptal</button>
+      <button class="btn-primary" onclick="saveEntity()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS=['#c8f564','#64d4f5','#f5a064','#f564a4','#a064f5','#64f5b0','#f5e664','#f56464','#e0e0e0','#ff8c42'];
+
+let state={
+  inbox:[],
+  groups:[
+    {id:'g1',name:'Derin Çalışma',color:'#c8f564',tasks:[]},
+    {id:'g2',name:'Yüzeysel İşler',color:'#64d4f5',tasks:[]},
+    {id:'g3',name:'Ev & Aile',color:'#f5a064',tasks:[]},
+    {id:'g4',name:'Bekleyen',color:'#a064f5',tasks:[]},
+    {id:'g5',name:'Acil',color:'#f56464',tasks:[]}
+  ],
+  sections:[
+    {id:'s1',name:'İçerik Üretimi',color:'#c8f564',tasks:[]},
+    {id:'s2',name:'Araştırma',color:'#64d4f5',tasks:[]},
+    {id:'s3',name:'Planlama',color:'#f5a064',tasks:[]},
+    {id:'s4',name:'İletişim',color:'#a064f5',tasks:[]},
+    {id:'s5',name:'Öğrenme',color:'#64f5b0',tasks:[]}
+  ]
+};
+
+function load(){try{const s=localStorage.getItem('odak-v2');if(s)state=JSON.parse(s);}catch(e){}}
+function save(){localStorage.setItem('odak-v2',JSON.stringify(state));}
+
+// NAV
+let currentPage='inbox';
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
+  currentPage=name;
+  document.getElementById('main-fab').style.display=(name==='settings')?'none':'flex';
+  render();
+}
+function fabAction(){
+  if(currentPage==='inbox')openAddInbox();
+}
+
+// RENDER
+function render(){renderInbox();renderCards();renderSettings();}
+
+// INBOX
+function renderInbox(){
+  const list=document.getElementById('inbox-list');
+  const empty=document.getElementById('inbox-empty');
+  document.getElementById('inbox-count').textContent=state.inbox.length+' görev';
+  if(!state.inbox.length){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  list.innerHTML=state.inbox.map(it=>`
+    <div class="inbox-item">
+      <div class="inbox-item-text ${it.done?'done':''}">${esc(it.text)}</div>
+      <button class="item-menu-btn" onclick="openItemMenu('${it.id}')">⋯</button>
+    </div>`).join('');
+}
+function openAddInbox(){
+  document.getElementById('inbox-input').value='';
+  openOverlay('ov-inbox');
+  setTimeout(()=>document.getElementById('inbox-input').focus(),300);
+}
+function addInboxItem(){
+  const text=document.getElementById('inbox-input').value.trim();
+  if(!text)return;
+  state.inbox.push({id:'i'+Date.now(),text,done:false});
+  save();closeOverlay('ov-inbox');renderInbox();
+}
+function openItemMenu(iid){
+  const it=state.inbox.find(x=>x.id===iid);
+  document.getElementById('im-title').textContent=trunc(it.text,40);
+  document.getElementById('im-options').innerHTML=`
+    <button class="menu-option" onclick="openAssign('${iid}');closeOverlay('ov-item-menu')">◎ Gruba veya bölüme ata</button>
+    <button class="menu-option" onclick="toggleInbox('${iid}');closeOverlay('ov-item-menu')">${it.done?'↩ Tamamlanmadı':'✓ Tamamlandı'}</button>
+    <button class="menu-option danger" onclick="deleteInbox('${iid}');closeOverlay('ov-item-menu')">✕ Sil</button>`;
+  openOverlay('ov-item-menu');
+}
+function toggleInbox(iid){const it=state.inbox.find(x=>x.id===iid);if(it)it.done=!it.done;save();renderInbox();}
+function deleteInbox(iid){state.inbox=state.inbox.filter(x=>x.id!==iid);save();renderInbox();}
+
+// ASSIGN
+let assignIid=null,assignSelId=null,assignTab='group';
+function openAssign(iid){
+  assignIid=iid;assignSelId=null;assignTab='group';
+  const it=state.inbox.find(x=>x.id===iid);
+  document.getElementById('assign-title').textContent=trunc(it.text,35);
+  switchAssignTab('group');
+  openOverlay('ov-assign');
+}
+function switchAssignTab(tab){
+  assignTab=tab;assignSelId=null;
+  document.getElementById('atab-group').className='assign-tab'+(tab==='group'?' active':'');
+  document.getElementById('atab-section').className='assign-tab'+(tab==='section'?' active':'');
+  const list=tab==='group'?state.groups:state.sections;
+  document.getElementById('assign-list').innerHTML=list.map(g=>`
+    <div class="group-option" data-id="${g.id}" onclick="selAssign('${g.id}',this)">
+      <div class="group-dot" style="background:${g.color}"></div>
+      <span>${esc(g.name)}</span>
+      <span style="margin-left:auto;font-size:12px;color:var(--muted)">${g.tasks.length}/20</span>
+    </div>`).join('');
+}
+function selAssign(id,el){
+  assignSelId=id;
+  document.querySelectorAll('.group-option').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function confirmAssign(){
+  if(!assignSelId||!assignIid)return;
+  const list=assignTab==='group'?state.groups:state.sections;
+  const target=list.find(x=>x.id===assignSelId);
+  const it=state.inbox.find(x=>x.id===assignIid);
+  if(!target||!it)return;
+  if(target.tasks.length>=20){alert('Bu alan dolu (20/20)!');return;}
+  target.tasks.push({id:'t'+Date.now(),text:it.text,done:false});
+  state.inbox=state.inbox.filter(x=>x.id!==assignIid);
+  save();closeOverlay('ov-assign');render();
+}
+
+// CARDS
+function renderCards(){
+  ['groups','sections'].forEach(type=>{
+    const list=type==='groups'?state.groups:state.sections;
+    const grid=document.getElementById(type+'-grid');
+    if(!list.length){grid.innerHTML='<div class="empty-state"><div class="empty-icon">＋</div><div>Ayarlardan ekle.</div></div>';return;}
+    grid.innerHTML=list.map(g=>{
+      const done=g.tasks.filter(t=>t.done).length;
+      const pct=g.tasks.length?Math.round(done/g.tasks.length*100):0;
+      const detailType=type==='groups'?'group':'section';
+      return `<div class="group-card" onclick="openDetail('${detailType}','${g.id}')">
+        <div class="group-card-top">
+          <div class="group-dot" style="background:${g.color}"></div>
+          <div class="group-name">${esc(g.name)}</div>
+          <span class="counter-badge" style="margin-left:auto">${g.tasks.length}/20</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${done} tamamlandı · ${g.tasks.length-done} bekliyor</div>
+        <div class="group-progress-bar"><div class="group-progress-fill" style="width:${pct}%;background:${g.color}"></div></div>
+      </div>`;
+    }).join('');
+  });
+}
+
+// DETAIL
+let detailType=null,detailId=null,dragSrc=null;
+function openDetail(type,id){
+  detailType=type;detailId=id;
+  document.getElementById('main-fab').style.display='none';
+  document.getElementById(type+'-detail').style.display='block';
+  renderDetail();
+}
+function closeDetail(type){
+  document.getElementById(type+'-detail').style.display='none';
+  detailType=null;detailId=null;
+  document.getElementById('main-fab').style.display=(currentPage==='settings')?'none':'flex';
+  render();
+}
+function getList(){return detailType==='group'?state.groups:state.sections;}
+function getEntity(){return getList().find(x=>x.id===detailId);}
+function renderDetail(){
+  const type=detailType;
+  const ent=getEntity();if(!ent)return;
+  const p=type==='group'?'gd':'sd';
+  document.getElementById(p+'-name').textContent=ent.name;
+  document.getElementById(p+'-dot').style.background=ent.color;
+  const done=ent.tasks.filter(t=>t.done).length;
+  document.getElementById(p+'-count').textContent=ent.tasks.length+'/20';
+  document.getElementById(p+'-info').textContent=`${done} tamamlandı · ${ent.tasks.length-done} bekliyor`;
+  const container=document.getElementById(p+'-tasks');
+  const empty=document.getElementById(p+'-empty');
+  if(!ent.tasks.length){container.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  container.innerHTML=ent.tasks.map((t,i)=>`
+    <div class="task-item" data-idx="${i}" draggable="true">
+      <div class="drag-handle">⠿</div>
+      <div class="task-rank ${i===0&&!t.done?'first':''}">${i===0&&!t.done?'★':i+1}</div>
+      <div style="flex:1">
+        ${i===0&&!t.done?'<div class="first-badge">Şimdi yap</div>':''}
+        <div class="task-text ${t.done?'done':''}">${esc(t.text)}</div>
+      </div>
+      <button class="item-menu-btn" onclick="openTaskMenu('${t.id}',${i})">⋯</button>
+    </div>`).join('');
+  container.querySelectorAll('.task-item').forEach(el=>{
+    el.addEventListener('dragstart',()=>{dragSrc=+el.dataset.idx;el.style.opacity='.4'});
+    el.addEventListener('dragend',()=>{el.style.opacity='1'});
+    el.addEventListener('dragover',e=>e.preventDefault());
+    el.addEventListener('drop',e=>{
+      e.preventDefault();const dst=+el.dataset.idx;
+      if(dragSrc===null||dragSrc===dst)return;
+      const ent=getEntity();const[m]=ent.tasks.splice(dragSrc,1);ent.tasks.splice(dst,0,m);
+      save();renderDetail();dragSrc=null;
+    });
+  });
+}
+function openTaskMenu(tid,idx){
+  const ent=getEntity();const t=ent.tasks[idx];
+  document.getElementById('tm-title').textContent=trunc(t.text,40);
+  document.getElementById('tm-options').innerHTML=`
+    <button class="menu-option" onclick="toggleDetailTask('${tid}');closeOverlay('ov-task-menu')">${t.done?'↩ Tamamlanmadı':'✓ Tamamlandı'}</button>
+    ${idx>0?`<button class="menu-option" onclick="moveTask(${idx},-1);closeOverlay('ov-task-menu')">↑ Yukarı taşı</button>`:''}
+    ${idx<ent.tasks.length-1?`<button class="menu-option" onclick="moveTask(${idx},1);closeOverlay('ov-task-menu')">↓ Aşağı taşı</button>`:''}
+    <button class="menu-option danger" onclick="deleteDetailTask('${tid}');closeOverlay('ov-task-menu')">✕ Sil</button>`;
+  openOverlay('ov-task-menu');
+}
+function toggleDetailTask(tid){const ent=getEntity();const t=ent.tasks.find(x=>x.id===tid);if(t)t.done=!t.done;save();renderDetail();}
+function moveTask(idx,dir){
+  const ent=getEntity();const ni=idx+dir;
+  if(ni<0||ni>=ent.tasks.length)return;
+  [ent.tasks[ni],ent.tasks[idx]]=[ent.tasks[idx],ent.tasks[ni]];
+  save();renderDetail();
+}
+function deleteDetailTask(tid){const ent=getEntity();ent.tasks=ent.tasks.filter(x=>x.id!==tid);save();renderDetail();}
+function openAddTask(){
+  const ent=getEntity();
+  document.getElementById('task-title').textContent=esc(ent.name)+' — Görev Ekle';
+  document.getElementById('task-input').value='';
+  const over=ent.tasks.length>=20;
+  document.getElementById('task-limit-warn').style.display=over?'block':'none';
+  const btn=document.getElementById('task-add-btn');btn.disabled=over;btn.style.opacity=over?'0.4':'1';
+  openOverlay('ov-task');
+  setTimeout(()=>document.getElementById('task-input').focus(),300);
+}
+function confirmAddTask(){
+  const text=document.getElementById('task-input').value.trim();if(!text)return;
+  const ent=getEntity();if(ent.tasks.length>=20)return;
+  ent.tasks.push({id:'t'+Date.now(),text,done:false});
+  save();closeOverlay('ov-task');renderDetail();
+}
+
+// SETTINGS
+let editEntityType=null,editEntityId=null,selColor=COLORS[0];
+function renderSettings(){
+  ['groups','sections'].forEach(type=>{
+    const list=type==='groups'?state.groups:state.sections;
+    const el=document.getElementById('settings-'+type+'-list');
+    if(!list.length){el.innerHTML='<div style="padding:14px 16px;font-size:14px;color:var(--muted)">Henüz yok.</div>';return;}
+    el.innerHTML=list.map(g=>`
+      <div class="settings-row">
+        <div class="group-dot" style="background:${g.color};flex-shrink:0"></div>
+        <div class="settings-row-name">${esc(g.name)}</div>
+        <div style="display:flex;gap:6px">
+          <button class="icon-btn" onclick="openEditEntity('${type==='groups'?'group':'section'}','${g.id}')">✎</button>
+          <button class="icon-btn danger" onclick="deleteEntity('${type==='groups'?'group':'section'}','${g.id}')">✕</button>
+        </div>
+      </div>`).join('');
+  });
+}
+function openAddEntity(type){
+  editEntityType=type;editEntityId=null;
+  document.getElementById('entity-title').textContent=type==='group'?'Yeni Grup':'Yeni Bölüm';
+  document.getElementById('entity-name').value='';
+  selColor=COLORS[0];renderColorPicker();
+  openOverlay('ov-entity');
+  setTimeout(()=>document.getElementById('entity-name').focus(),300);
+}
+function openEditEntity(type,id){
+  editEntityType=type;editEntityId=id;
+  const list=type==='group'?state.groups:state.sections;
+  const g=list.find(x=>x.id===id);
+  document.getElementById('entity-title').textContent=type==='group'?'Grubu Düzenle':'Bölümü Düzenle';
+  document.getElementById('entity-name').value=g.name;
+  selColor=g.color;renderColorPicker();
+  openOverlay('ov-entity');
+}
+function renderColorPicker(){
+  document.getElementById('color-picker').innerHTML=COLORS.map(c=>`
+    <div class="color-dot ${c===selColor?'selected':''}" style="background:${c}" onclick="selCol('${c}',this)"></div>`).join('');
+}
+function selCol(c,el){selColor=c;document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');}
+function saveEntity(){
+  const name=document.getElementById('entity-name').value.trim();if(!name)return;
+  const list=editEntityType==='group'?state.groups:state.sections;
+  if(editEntityId){const g=list.find(x=>x.id===editEntityId);g.name=name;g.color=selColor;}
+  else list.push({id:(editEntityType==='group'?'g':'s')+Date.now(),name,color:selColor,tasks:[]});
+  save();closeOverlay('ov-entity');render();
+}
+function deleteEntity(type,id){
+  if(!confirm((type==='group'?'Bu grubu':'Bu bölümü')+' ve içindeki tüm görevleri sil?'))return;
+  if(type==='group')state.groups=state.groups.filter(x=>x.id!==id);
+  else state.sections=state.sections.filter(x=>x.id!==id);
+  save();render();
+}
+function resetAll(){
+  if(!confirm('Tüm veriler silinecek. Emin misin?'))return;
+  if(!confirm('Son onay: Liste, gruplar ve bölümler tamamen silinecek!'))return;
+  localStorage.removeItem('odak-v2');location.reload();
+}
+
+// HELPERS
+function openOverlay(id){document.getElementById(id).classList.add('open')}
+function closeOverlay(id){document.getElementById(id).classList.remove('open')}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function trunc(s,n){return s.length>n?s.slice(0,n)+'…':s}
+
+// PWA
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
+
+// INIT
+load();render();
+
+document.getElementById('inbox-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addInboxItem()}});
+document.getElementById('task-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();confirmAddTask()}});
+document.getElementById('entity-name').addEventListener('keydown',e=>{if(e.key==='Enter')saveEntity()});
+</script>
+</body>
+</html>
